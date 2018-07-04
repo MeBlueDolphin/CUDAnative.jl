@@ -47,6 +47,9 @@ end
 
 @generated function (k::KernelWrapper{F})(splat...) where {F}
     params = [:(splat[$i]) for i in 1:length(splat)]
+    if length(splat) >= 36
+        @safe_warn "passing too many arguments to kernel, compilation will probably fail" kernel=F argc=length(splat)
+    end
     quote
         k.f($(params...))
         return nothing
