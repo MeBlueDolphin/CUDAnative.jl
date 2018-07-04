@@ -387,6 +387,7 @@ end
     end
 end
 
+if VERSION >= v"0.7.0-beta.61"
 @testset "argument count" begin
     val = [0]
     val_dev = Mem.upload(val)
@@ -410,6 +411,7 @@ end
 
         @test Mem.download(eltype(val), val_dev)[1] == sum(args)
     end
+end
 end
 
 end
