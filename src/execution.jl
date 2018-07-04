@@ -37,38 +37,20 @@ isghosttype(dt) = dt.isconcretetype && sizeof(dt) == 0
 
 # generate kernel wrapper functions that ignore return values
 
-# FIXME: we cannot use an ordinary splat for this, because that generates dynamic calls
-#        for certain types of arguments.
-#
-#function (k::KernelWrapper)(params...)
-#    (k.f)(params...)
-#    return nothing
-#end
-
-# NOTE: we also can't generate wrappers with a known amount of arguments when we need them,
-#       because `@cuda` supports splatting and can't know the inner function argument count
-
-# so instead, we generate a predefined set of wrapper methods for a number of arguments
-# (up to 32, which is where the tuple splat limit would kick in anyway).
+# NOTE: we don't use a plain method with a splat, because that runs into inference limits.
+#       by destructuring the (fully inferred) splat in a generated function,
+#       we run into inference limits a bit later.
 
 struct KernelWrapper{F} <: Core.Function
     f::F
 end
 
-for i in 0:32
-    params = Tuple(Symbol("param$j") for j in 1:i)
-    @eval begin
-        function (k::KernelWrapper)($(params...))
-            # TODO: call-site inlining; we now need to keep track of the inner function
-            #       for reflection usability reasons (`inner_f` in CompilerContext)
-            (k.f)($(params...))
-            return nothing
-        end
+@generated function (k::KernelWrapper{F})(splat...) where {F}
+    params = [:(splat[$i]) for i in 1:length(splat)]
+    quote
+        k.f($(params...))
+        return nothing
     end
-end
-
-@generated function (::KernelWrapper{F})(params...) where {F}
-    @safe_fatal "invalid kernel call; too many arguments" kernel=F argc=length(params)
 end
 
 

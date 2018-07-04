@@ -392,8 +392,8 @@ end
     val_dev = Mem.upload(val)
     ptr = Base.unsafe_convert(Ptr{Int}, val_dev)
 
-    for i in 1:32
-        f = Symbol("execution_args_$i")
+    for i in (1, 10, 20, 35)
+        f = Symbol("execution_$(i)arg")
         params = [Symbol('a'+j-1) for j in 1:i]
 
         # generate a kernel
